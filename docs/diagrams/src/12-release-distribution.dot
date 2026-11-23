@@ -1,0 +1,20 @@
+digraph release {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="12 — Release & distribution topology"; labelloc=t;
+  tag [label="git tag vX.Y.Z"];
+  gha [label="GitHub Actions matrix"];
+  win [label="windows-latest\nbuild → Azure Trusted Signing\n→ NSIS .exe + blockmap"];
+  mac [label="macos-14\nbuild universal → Developer ID\n→ notarytool → staple → dmg/zip"];
+  gh [label="GitHub Releases\nlatest.yml / latest-mac.yml", shape=cylinder, fillcolor="#ffffff"];
+  r2 [label="Cloudflare R2 mirror\nupdates.<domain>", shape=cylinder, fillcolor="#ffffff"];
+  site [label="Website download page\n(+ USB offline installs)"];
+  app [label="Installed app\nelectron-updater\nalpha / beta / stable", fillcolor="#e6f4ea"];
+  gate [label="Live session active?", shape=diamond, fillcolor="#ffffff"];
+  install [label="Install on quit"];
+  defer [label="Defer — never during service", fillcolor="#fde8e8"];
+  tag -> gha; gha -> win; gha -> mac; win -> gh; mac -> gh; gh -> r2 [label="sync"];
+  gh -> site; r2 -> app [label="feed (stagingPercentage)"]; gh -> app [style=dashed, label="fallback"];
+  app -> gate; gate -> defer [label="yes"]; gate -> install [label="no"];
+}

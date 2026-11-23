@@ -1,0 +1,19 @@
+digraph catalogue {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="10 — Content catalogue & media packs (post-MVP)"; labelloc=t;
+  contrib [label="Licensed creators /\ncontributors"];
+  queue [label="BullMQ jobs\nscan · transcode · thumbnail"];
+  review [label="Human licence review", fillcolor="#fff6e0"];
+  sign [label="Sign manifest\n(Ed25519, KMS)"];
+  r2 [label="Cloudflare R2\npack assets", shape=cylinder, fillcolor="#ffffff"];
+  api [label="NestJS API :4000\n/v1/catalogue/packs"];
+  pg [label="PostgreSQL", shape=cylinder, fillcolor="#ffffff"];
+  app [label="Desktop Downloads module", fillcolor="#e6f4ea"];
+  verify [label="Verify signature +\nasset sha256"];
+  imp [label="Import via media pipeline\n+ media_licences"];
+  contrib -> queue -> review -> sign -> r2; sign -> pg; api -> pg;
+  app -> api [label="list / manifest"]; api -> app [label="signed URL (15 min)", style=dashed];
+  app -> r2 [label="resumable download"]; r2 -> verify -> imp;
+}

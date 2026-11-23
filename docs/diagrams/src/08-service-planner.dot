@@ -1,0 +1,17 @@
+digraph service_planner {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="08 — Service planning & resolution"; labelloc=t;
+  tpl [label="service_templates\n(Sunday, Bible study, ...)", shape=cylinder, fillcolor="#ffffff"];
+  service [label="services\nSunday Service — 29 Nov"];
+  items [label="service_items (polymorphic)\nitem_type + ref_id + options_json"];
+  pres [label="presentation"]; song [label="song + arrangement"]; scr [label="scripture ref"];
+  vid [label="video / image"]; cd [label="countdown"]; ann [label="announcement\nrotation"];
+  resolve [label="services:start\nresolve each item", fillcolor="#e6f4ea"];
+  docs [label="EngineDocument per item\n(loaded one at a time)", fillcolor="#fde8e8"];
+  tpl -> service [label="instantiate"]; service -> items;
+  items -> pres; items -> song; items -> scr; items -> vid; items -> cd; items -> ann;
+  pres -> resolve; song -> resolve [label="lyrics→slides"]; scr -> resolve [label="paginate"];
+  vid -> resolve; cd -> resolve; ann -> resolve; resolve -> docs;
+}

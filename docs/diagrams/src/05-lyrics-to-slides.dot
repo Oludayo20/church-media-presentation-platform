@@ -1,0 +1,18 @@
+digraph lyrics {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="05 — Lyrics-to-slides pipeline"; labelloc=t;
+  paste [label="Pasted / imported lyrics\n(txt · OpenLyrics · CCLI)"];
+  parse [label="Parse sections\nVerse 1 · Chorus · [Bridge]"];
+  sections [label="song_sections", shape=cylinder, fillcolor="#ffffff"];
+  arr [label="song_arrangements\nV1 C V2 C B C C", shape=cylinder, fillcolor="#ffffff"];
+  expand [label="Expand arrangement\n(chorus reused)"];
+  split [label="Split chunks\nlines/slide or char budget\nnever mid-line"];
+  fit [label="Measure & auto-fit\ntemplate text box\nshrink → re-split"];
+  emit [label="EngineSlide[]\nmeta: section label", fillcolor="#e6f4ea"];
+  footer [label="Copyright footer\n(first/last slide)"];
+  fts [label="songs_fts (FTS5)\nunicode61, no diacritics", shape=cylinder, fillcolor="#ffffff"];
+  paste -> parse -> sections; sections -> expand; arr -> expand; expand -> split -> fit -> emit; footer -> emit [style=dashed];
+  sections -> fts [label="index", style=dashed];
+}

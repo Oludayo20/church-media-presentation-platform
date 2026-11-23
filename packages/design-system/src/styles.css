@@ -1,0 +1,59 @@
+/*
+ * Design tokens for the operator UI. Dark is the default because media
+ * operators work in dim control rooms; light is opt-in via
+ * <html data-theme="light"> (settings key ui.theme).
+ *
+ * The app's own CSS must `@import "tailwindcss";` before importing this file.
+ */
+
+:root {
+  color-scheme: dark;
+  --background: #0e1116;
+  --foreground: #e8eaf0;
+  --surface: #161a21;
+  --surface-raised: #1e232c;
+  --border: #2a303b;
+  --muted: #9aa3b2;
+  --primary: #6c63ff;
+  --primary-foreground: #ffffff;
+  --live: #e5484d;
+  --live-foreground: #ffffff;
+  --success: #30a46c;
+  --warning: #f5a524;
+  --ring: #8b85ff;
+  --radius: 0.5rem;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #f7f8fa;
+  --foreground: #12151b;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #dde1e8;
+  --muted: #5b6474;
+  --primary: #5048e5;
+  --primary-foreground: #ffffff;
+  --live: #d93036;
+  --live-foreground: #ffffff;
+  --success: #218358;
+  --warning: #b86e00;
+  --ring: #5048e5;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-live: var(--live);
+  --color-live-foreground: var(--live-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-ring: var(--ring);
+  --radius-md: var(--radius);
+}

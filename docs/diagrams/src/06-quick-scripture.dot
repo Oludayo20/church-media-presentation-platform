@@ -1,0 +1,18 @@
+digraph quick_scripture {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="06 — Bible lookup & Quick Scripture overlay"; labelloc=t;
+  hotkey [label="Ctrl/Cmd+F\nQuick Scripture"];
+  input [label="'Rom 8:28-30' or\n'all things work together'"];
+  parser [label="Reference parser\naliases · ranges · lists"];
+  fts [label="bible_verses_fts\n(scoped by translation)"];
+  verses [label="bible_verses", shape=cylinder, fillcolor="#ffffff"];
+  paginate [label="Paginate into\nBible slides (1/2)"];
+  preview [label="Preview engine\n(operator only)"];
+  push [label="live:overlayPush\nsnapshot item/slide/videoTime", fillcolor="#fff6e0"];
+  audience [label="Audience: scripture\non overlay layer", fillcolor="#fde8e8"];
+  pop [label="Esc → live:overlayPop\nrestore exact position", fillcolor="#e6f4ea"];
+  hotkey -> input; input -> parser [label="looks like ref"]; input -> fts [label="free text"];
+  parser -> verses; fts -> verses; verses -> paginate -> preview -> push -> audience -> pop;
+}

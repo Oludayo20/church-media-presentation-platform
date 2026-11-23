@@ -1,0 +1,19 @@
+digraph media_import {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="07 — Media import pipeline (utility worker)"; labelloc=t;
+  drop [label="Drag & drop / file picker\n(paths → main)"];
+  validate [label="Extension + magic bytes"];
+  hash [label="Stream SHA-256"];
+  dup [label="checksum exists?", shape=diamond, fillcolor="#ffffff"];
+  existing [label="Return existing asset\n'Already in library'"];
+  copy [label="Copy → .tmp → fsync → rename\nmedia/ab/abcdef….mp4"];
+  probe [label="ffprobe\nduration · size · codec"];
+  codec [label="Supported codec?", shape=diamond, fillcolor="#ffffff"];
+  transcode [label="Offer transcode\n→ H.264 MP4", fillcolor="#fff6e0"];
+  thumb [label="Thumbnail / poster\n(WebP)"];
+  row [label="media_assets + tags\n+ media_licences", shape=cylinder, fillcolor="#ffffff"];
+  drop -> validate -> hash -> dup; dup -> existing [label="yes"]; dup -> copy [label="no"];
+  copy -> probe -> codec; codec -> thumb [label="yes"]; codec -> transcode [label="no"]; transcode -> thumb; thumb -> row;
+}

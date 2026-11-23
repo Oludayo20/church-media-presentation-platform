@@ -1,0 +1,16 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Supply-chain hardening (docs/SECURITY.md): pnpm refuses install scripts
+# unless a package is listed `true` here. Nothing in Phase 0 needs one —
+# electron fetches its binary lazily on first run, and rolldown/lightningcss/
+# tailwind-oxide ship prebuilt binaries. The database uses Node's built-in
+# `node:sqlite`, so there is no native SQLite module to build (Phase 1).
+# electron-winstaller is Squirrel tooling pulled in by electron-builder; we
+# ship NSIS, so its script stays denied. esbuild (via drizzle-kit, dev-only)
+# only uses its postinstall to verify the binary that its per-platform
+# optional dependency already provides.
+allowBuilds:
+  electron-winstaller: false
+  esbuild: false

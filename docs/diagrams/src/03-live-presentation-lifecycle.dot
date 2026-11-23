@@ -1,0 +1,19 @@
+digraph live_lifecycle {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  rankdir=TB;
+  label="03 — Live session state machine"; labelloc=t;
+  node [shape=ellipse];
+  idle; preparing; live [fillcolor="#e6f4ea"]; masked [label="masked\n(black / logo)"]; overlay [label="overlay\n(Quick Scripture)"];
+  suspended [label="suspended\n(display lost)", fillcolor="#fde8e8"]; ended; recoverable [label="recoverable\n(after crash)", fillcolor="#fff6e0"];
+  idle -> preparing [label="services:start"];
+  preparing -> live [label="engine ready\n(slide 0,1 preloaded)"];
+  live -> live [label="next / prev / goto\nvideo:*  live:patch"];
+  live -> masked [label="blank / logo"]; masked -> live [label="unblank"];
+  live -> overlay [label="overlay:push\n(snapshot pos)"]; overlay -> live [label="overlay:pop\n(restore pos)"];
+  live -> suspended [label="display-removed"]; masked -> suspended; overlay -> suspended;
+  suspended -> live [label="display-added\n(fingerprint match)"];
+  live -> ended [label="live:end"]; masked -> ended;
+  recoverable -> preparing [label="resume from\nlive_sessions journal"];
+}

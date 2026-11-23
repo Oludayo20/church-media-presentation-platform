@@ -1,0 +1,25 @@
+digraph data_model {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  rankdir=LR;
+  label="11 — Data model (SQLite)"; labelloc=t;
+  node [shape=box, style="filled", fillcolor="#ffffff"];
+  churches; users; church_members; settings;
+  presentations; slides; slide_objects; presentation_versions;
+  songs; song_sections; song_arrangements; songs_fts [style="dashed,filled"];
+  bible_translations; bible_books; bible_book_aliases; bible_verses; bible_verses_fts [style="dashed,filled"];
+  media_assets; media_folders; media_tags; media_licences;
+  services; service_items; service_item_groups; service_templates;
+  templates; live_sessions; display_profiles; download_packages; downloaded_assets;
+  churches -> church_members; users -> church_members; churches -> settings;
+  churches -> presentations -> slides -> slide_objects; presentations -> presentation_versions;
+  churches -> songs -> song_sections; songs -> song_arrangements; song_sections -> songs_fts [style=dashed];
+  bible_translations -> bible_books -> bible_verses; bible_books -> bible_book_aliases; bible_verses -> bible_verses_fts [style=dashed];
+  churches -> media_folders -> media_assets; churches -> media_tags -> media_assets [dir=both, label="m:n"]; media_assets -> media_licences;
+  churches -> services -> service_items; services -> service_item_groups; churches -> service_templates; churches -> templates;
+  service_items -> presentations [style=dotted, label="ref_id"]; service_items -> songs [style=dotted]; service_items -> media_assets [style=dotted];
+  services -> live_sessions; churches -> display_profiles;
+  download_packages -> downloaded_assets -> media_assets;
+  slides -> media_assets [style=dotted, label="background asset_id"];
+}

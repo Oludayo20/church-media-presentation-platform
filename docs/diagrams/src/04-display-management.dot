@@ -1,0 +1,22 @@
+digraph displays {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="04 — Display management & hot-plug recovery"; labelloc=t;
+  enumerate [label="screen.getAllDisplays()"];
+  identify [label="Identify overlay\n(number per display)"];
+  assign [label="Operator assigns\naudience display"];
+  profile [label="display_profiles\nfingerprint(label|w|h|scale)", shape=cylinder, fillcolor="#ffffff"];
+  win [label="Audience BrowserWindow\nframeless · fullscreen · black\nshow on ready-to-show", fillcolor="#fde8e8"];
+  single [label="Single display?\n→ in-app preview mode", fillcolor="#fff6e0"];
+  removed [label="display-removed", shape=hexagon, fillcolor="#fde8e8"];
+  suspend [label="Hide window · keep engine state\nred banner · previews continue"];
+  added [label="display-added", shape=hexagon, fillcolor="#e6f4ea"];
+  match [label="Fingerprint\nmatches?", shape=diamond, fillcolor="#ffffff"];
+  restore [label="Re-place · re-fullscreen\nreplay load + goto(current)", fillcolor="#e6f4ea"];
+  prompt [label="Toast: use new display\nas audience screen?"];
+  enumerate -> identify -> assign -> profile -> win;
+  enumerate -> single [style=dashed];
+  removed -> suspend; added -> match; match -> restore [label="yes"]; match -> prompt [label="no"]; prompt -> restore [label="accept"];
+  suspend -> added [style=dotted, label="cable back"];
+}

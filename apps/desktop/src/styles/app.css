@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@cmp/design-system/styles.css";
+
+/* Scan the design system's components for class names too. */
+@source "../../../../packages/design-system/src";
+
+body {
+  @apply bg-background text-foreground antialiased;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}

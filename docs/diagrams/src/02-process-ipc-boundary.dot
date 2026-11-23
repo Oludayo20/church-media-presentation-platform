@@ -1,0 +1,19 @@
+digraph ipc_boundary {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="02 — Electron process & IPC boundary"; labelloc=t;
+  ui [label="React component\ncalls window.cmp.songs.search()"];
+  bridge [label="contextBridge\nnamed functions only", fillcolor="#fff6e0"];
+  router [label="ipcMain.handle(channel)\nsender origin check", fillcolor="#e6f4ea"];
+  zod [label="Zod schema\n(shared-validation)", shape=diamond, fillcolor="#ffffff"];
+  repo [label="Repository\n(Drizzle)", fillcolor="#e6f4ea"];
+  db [label="SQLite", shape=cylinder, fillcolor="#ffffff"];
+  err [label="{ success:false,\n  error:VALIDATION_ERROR }", fillcolor="#fde8e8"];
+  ok [label="{ success:true, data }", fillcolor="#e6f4ea"];
+  ctl [label="LiveSessionController\nstamps seq, journals", fillcolor="#e6f4ea"];
+  eng [label="Audience engine\ndrops seq <= lastApplied", fillcolor="#fde8e8"];
+  ui -> bridge -> router -> zod;
+  zod -> err [label="invalid"]; zod -> repo [label="valid"]; repo -> db; repo -> ok; ok -> ui [style=dashed];
+  router -> ctl [label="live:*"]; ctl -> eng [label="MessagePort"]; eng -> ctl [label="engine:state", style=dashed];
+}

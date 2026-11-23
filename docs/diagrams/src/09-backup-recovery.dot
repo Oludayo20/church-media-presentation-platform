@@ -1,0 +1,19 @@
+digraph backup_recovery {
+  graph [fontname="Helvetica", fontsize=11, rankdir=LR, nodesep=0.5, ranksep=0.7, bgcolor="white"];
+  node [fontname="Helvetica", fontsize=10, shape=box, style="rounded,filled", fillcolor="#eef3fb", color="#4a6fa5"];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+  label="09 — Offline-first persistence, backup & crash recovery"; labelloc=t;
+  db [label="workspace.db (WAL)", shape=cylinder, fillcolor="#ffffff"];
+  media [label="media/ store", shape=folder, fillcolor="#ffffff"];
+  journal [label="live_sessions journal\n(250 ms debounce)", shape=cylinder, fillcolor="#ffffff"];
+  backup [label="backup:create\nSQLite online backup\n+ referenced media + manifest"];
+  file [label=".cmpbackup (zip)\nsha256 per file", shape=note, fillcolor="#fff6e0"];
+  verify [label="Verify checksums\nPRAGMA integrity_check"];
+  swap [label="Atomic swap\nworkspace → .bak, restored → live", fillcolor="#e6f4ea"];
+  premig [label="Pre-migration backup\n→ migrate in transaction"];
+  crash [label="App relaunch\nopen session found?", shape=diamond, fillcolor="#ffffff"];
+  resume [label="Resume at item / slide\nservices:start(startAt)", fillcolor="#e6f4ea"];
+  db -> backup; media -> backup; backup -> file -> verify -> swap;
+  db -> premig [style=dashed, label="on upgrade"];
+  journal -> crash -> resume [label="yes"];
+}
