@@ -18,12 +18,19 @@ export interface CreateMediaAssetInput {
   checksum: string;
   width?: number | null;
   height?: number | null;
+  durationMs?: number | null;
+  codec?: string | null;
+  hasAudio?: boolean;
+  thumbnailPath?: string | null;
+  transcodeReason?: string | null;
+  playbackWarning?: string | null;
+  folderId?: string | null;
+  fontFamily?: string | null;
 }
 
 /**
- * Minimal media repository: enough for the onboarding logo and the
- * `cmp-media://` protocol. The full library (folders, tags, licences,
- * missing-file scans) is Phase 4.
+ * Media assets by id/checksum, and idempotent creation. The library views
+ * (filters, tags, folders, licences, usage) are in media-library-repository.
  */
 export function createMediaRepository(database: Database) {
   const { db } = database;
@@ -54,6 +61,22 @@ export function createMediaRepository(database: Database) {
     findById,
     findByChecksum,
 
+    async listByCategory(
+      churchId: string,
+      category: string,
+    ): Promise<MediaAsset[]> {
+      return db
+        .select()
+        .from(mediaAssets)
+        .where(
+          and(
+            eq(mediaAssets.churchId, churchId),
+            eq(mediaAssets.category, category),
+          ),
+        )
+        .orderBy(mediaAssets.createdAt);
+    },
+
     /**
      * Inserts an asset, or returns the existing one with the same checksum
      * (`UNIQUE(church_id, checksum)`): importing the same file twice is a
@@ -77,6 +100,14 @@ export function createMediaRepository(database: Database) {
         checksum: input.checksum,
         width: input.width ?? null,
         height: input.height ?? null,
+        durationMs: input.durationMs ?? null,
+        codec: input.codec ?? null,
+        hasAudio: input.hasAudio ?? false,
+        thumbnailPath: input.thumbnailPath ?? null,
+        transcodeReason: input.transcodeReason ?? null,
+        playbackWarning: input.playbackWarning ?? null,
+        folderId: input.folderId ?? null,
+        fontFamily: input.fontFamily ?? null,
         createdAt: timestamp,
         updatedAt: timestamp,
       });

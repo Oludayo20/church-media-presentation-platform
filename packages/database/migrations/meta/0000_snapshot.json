@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7592a134-72f8-4652-80cc-5b68cadc6ceb",
+  "id": "672c6280-eb0f-4b1d-bcb2-a6ede3a47d7e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "church_members": {

@@ -1,0 +1,1 @@
+ALTER TABLE `media_assets` ADD `font_family` text;

@@ -34,6 +34,8 @@ The threat model of a desktop presentation app is different from a web platform.
 - Imported text is treated as **text**. The engine renders it with `textContent`, never `innerHTML`. Rich text uses a whitelisted span model (bold, italic, colour), not HTML.
 - PPTX embedded OLE objects, macros (`.pptm`) and external links are ignored. URLs in hyperlinks are dropped.
 - Parsing runs in the `utilityProcess` worker, so a parser crash cannot take down the main process or a live session.
+- PPTX is read with a bounded random-access ZIP reader. Entry count, per-entry size and total uncompressed size are checked while streaming, so a lying header cannot get past them. Zip entry names are never used as file-system paths.
+- PDFs are parsed by pdf.js in a hidden, sandboxed renderer under the strict CSP, not in main. pdf.js 6 never evaluates code from documents.
 - Fuzz corpora for each importer run in CI ([TASKS.md Phase 10](TASKS.md#phase-10--hardening--cross-cutting)).
 
 ## Backup integrity
@@ -47,7 +49,7 @@ The threat model of a desktop presentation app is different from a web platform.
 - Installers are signed (Developer ID + notarisation, and Authenticode via Trusted Signing). electron-updater verifies signatures before install. See [EXTERNAL_INTEGRATIONS.md §1–3](EXTERNAL_INTEGRATIONS.md#1-apple-developer-id-signing--notarisation).
 - The update feed is HTTPS only. On Windows, `publisherName` pinning rejects updates signed by any other publisher.
 - `@electron/fuses`: `RunAsNode=false`, `EnableNodeOptionsEnvironmentVariable=false`, `EnableNodeCliInspectArguments=false`, `EnableEmbeddedAsarIntegrityValidation=true`, `OnlyLoadAppFromAsar=true`, `EnableCookieEncryption=true`.
-- Dependencies: lockfile committed, `pnpm audit` + `osv-scanner` in CI, Renovate with a 7-day minimum release age, and no `postinstall` scripts from unvetted packages (`pnpm.onlyBuiltDependencies` allowlist: `better-sqlite3`, `electron`, `esbuild`).
+- Dependencies: lockfile committed, `pnpm audit` + `osv-scanner` in CI, Renovate with a 7-day minimum release age, and no `postinstall` scripts from unvetted packages (`allowBuilds` in `pnpm-workspace.yaml`; currently nothing is allowed. SQLite is the built-in `node:sqlite`, so there is no native module to build).
 - Keep Electron on a supported major (the latest three). Security patch releases are fast-tracked through beta, but not during the weekend freeze ([RUNBOOK.md](RUNBOOK.md)).
 - Release signing secrets live in GitHub environment secrets with required reviewers on the `release` environment.
 

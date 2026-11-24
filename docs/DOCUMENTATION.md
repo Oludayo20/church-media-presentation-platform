@@ -142,6 +142,20 @@ type EngineCommand =
 
 The engine keeps `lastAppliedSeq`. Any command with `seq <= lastAppliedSeq` is acknowledged and dropped.
 
+**As implemented (Phases 2–3).** The schemas live in `@cmp/shared-validation/engine-protocol` and are shared by main, the engine and the IPC registry. The command set differs from the sketch above in these ways:
+
+- `blank`/`logo`/`unblank` became one `{ type: "mask", mask: "none" | "black" | "logo" }`.
+- `clear` carries `{ on }`.
+- `config` was added, carrying the fallback background, logo, safe area and default transition.
+- `test-pattern { on }` and `unload` were added.
+- `video` gained a `toggle` action.
+
+The engine reports back on the same port: `{ type: "state", state }` (slide, mask, overlay depth, video position, warnings), plus `{ type: "replay" }` when an operator-side engine mounts late.
+
+- **Coalescing:** a `goto` immediately followed by another `goto` or `load` is skipped.
+- **Instant commands:** `mask`, `clear` and `test-pattern` never wait behind slide rendering. Video commands do wait, but only while a load is pending.
+- **Two engine sinks:** every audience window and the operator's in-app mirror is a "sink" with its own `seq`, and each is fully replayed when it (re)connects.
+
 ---
 
 ## 3. Live presentation lifecycle
@@ -224,6 +238,8 @@ The layout has seven areas: current slide (large) · audience output mirror · n
 
 A lyric fix in the live view triggers `songs:update`, which re-runs the slide generation for that song, diffs it against the cached slides, and sends `live:patch` for each changed slide. If the current slide changed, the engine swaps its text layer in place (no transition) and keeps the video running.
 
+As implemented (Phase 5), the main process sends the engine `patch` command directly to every engine; there is no `live:patch` IPC channel. When the slide ids change (sections added or removed), the item reloads at the nearest slide and any overlays are re-pushed. Each playlist item carries a `revision` in `live:state`, so operator previews refetch. Until Phase 8 services, songs join a live session with `live:queueSong`.
+
 ---
 
 ## 4. Display management & recovery
@@ -260,13 +276,13 @@ On macOS, `fullscreen` on a secondary display uses `simpleFullscreen` to avoid S
 
 ### 4.3 Hot-plug
 
-| Event                                            | Behaviour                                                                                                                                                                         |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `display-removed` (the audience display)         | Hide the audience window, keep the engine state alive, set the session to `suspended`, show a red banner "Projector disconnected. Output paused." Operator previews keep working. |
-| `display-added` matching the profile fingerprint | Re-position, re-fullscreen, re-show, replay `load` + `goto(current)` from the journal, then resume the previous state.                                                            |
-| `display-added` with no match                    | Toast "New display detected. Use as audience screen?"                                                                                                                             |
-| `display-metrics-changed`                        | Recompute bounds and the OutputController scale. No reload.                                                                                                                       |
-| Only one display                                 | Preview mode: the audience output renders in a resizable in-app panel, and "Go live" warns that there is no external screen.                                                      |
+| Event                                            | Behaviour                                                                                                                                                                                                                    |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `display-removed` (the audience display)         | Close the audience window (it is recreated, not moved, on restore), keep the session state alive, set the session to `suspended`, show a red banner "Projector disconnected. Output paused." Operator previews keep working. |
+| `display-added` matching the profile fingerprint | Re-position, re-fullscreen, re-show, replay `load` + `goto(current)` from the journal, then resume the previous state.                                                                                                       |
+| `display-added` with no match                    | Toast "New display detected. Use as audience screen?"                                                                                                                                                                        |
+| `display-metrics-changed`                        | Recompute bounds and the OutputController scale. No reload.                                                                                                                                                                  |
+| Only one display                                 | Preview mode: the audience output renders in a resizable in-app panel, and "Go live" warns that there is no external screen.                                                                                                 |
 
 ### 4.4 Phase 2: multiple outputs
 
@@ -298,6 +314,14 @@ Diagram: [`05-lyrics-to-slides.dot`](diagrams/src/05-lyrics-to-slides.dot)
 
 `songs_fts` is an FTS5 virtual table over `title`, `artist`, `lyrics_plain` and `tags`, with the `unicode61 remove_diacritics 2` tokenizer so Yoruba, Igbo and Hausa diacritics match unaccented queries. Ranking uses `bm25(songs_fts, 10.0, 3.0, 1.0, 2.0)`, so title matches outrank lyric matches.
 
+**As implemented (Phase 5).**
+
+- **Search table.** `songs_fts` is a regular (content-storing) FTS5 table with an UNINDEXED `song_id` column. That makes the effective weights `bm25(songs_fts, 0, 10, 3, 1, 2)` and lets `snippet()` return lyric excerpts. The repository rewrites the row on every save.
+- **Query syntax.** Every word of a query must match as a prefix. Each word is quoted, so FTS operators typed by users are inert.
+- **Measuring.** Step 4 does not use an off-screen canvas. Songs are generated in the main process, for the live session and the editor preview alike (`songs:preview`), so preview and projector split identically. Main has no canvas, so `@cmp/import-export` estimates width from per-character advance widths of a typical UI sans, erring wide. The engine's DOM auto-fit remains the safety net on screen.
+- **Slide ids.** Ids are `<sectionId>~<chunk>~<occurrence>`, which keeps them stable under edits to other sections. Step 5's `meta` is carried on `EngineSlide.meta`.
+- **Layouts.** Templates are three built-in lyric layouts (classic, lower third, bold capitals) until the Phase 7 template system.
+
 ---
 
 ## 6. Bible & Quick Scripture
@@ -307,6 +331,18 @@ Diagram: [`06-quick-scripture.dot`](diagrams/src/06-quick-scripture.dot)
 ### 6.1 Translation packages
 
 A Bible translation is installed from a `.cmpbible` package: a zip with `manifest.json` (`code`, `name`, `language`, `licence`, `attribution`, `versification`, `checksum`) and `verses.jsonl`. The importer also converts OSIS, USFM and Zefania XML. The bundled translations are public domain only, for example KJV, WEB, and public-domain Yoruba and Hausa Bibles where they exist. Any other translation must be imported by the church under its own licence. See [EXTERNAL_INTEGRATIONS.md §4](EXTERNAL_INTEGRATIONS.md#4-bible-translation-licensing--packages).
+
+The Bible module installs local packages. To prepare a package, provide a JSON manifest with
+`code`, `name`, `language`, `licence`, `attribution` and `versification`. The converter computes
+the SHA-256 checksum of `verses.jsonl`. Run it from the repository root with Info-ZIP on your path.
+
+```sh
+node packages/import-export/scripts/prepare-bible.mjs osis manifest.json translation.cmpbible bible.xml
+```
+
+Use `usfm` with one or more book files, or `zefania` with a Zefania XML file. Each JSONL row identifies
+a `book`, numeric `chapter` and `verse`, and `text`. It can also supply `aliases` for the book.
+Compound verse identifiers require normalizing the source versification before conversion.
 
 ### 6.2 Reference parser
 
@@ -345,6 +381,16 @@ Diagram: [`07-media-import.dot`](diagrams/src/07-media-import.dot)
 8. **Missing-file scan** (startup and on demand): verifies that every `file_path` exists and its size matches. Missing assets are badged, and slides that use them render the fallback background.
 
 GIF strategy: GIFs under 5 MB render as `<img>`. Larger GIFs are offered conversion to looping MP4 for smooth playback.
+
+**As implemented (Phase 4).**
+
+- **Where the work runs.** Steps 2–6 run in the `utilityProcess` worker (`apps/desktop/electron/worker`, using `@cmp/media-processing`); the worker never opens the database. Main persists the results and reports each file as imported, duplicate ("Already in library") or failed.
+- **Single-pass copy.** Hashing happens _while_ copying, to `media/.import-<uuid>.tmp`, followed by fsync and rename. The file is read once. A duplicate's temp copy is dropped.
+- **Thumbnails.** They are content-addressed as `thumbs/<sha256>.webp` (JPEG when the ffmpeg build lacks libwebp) and served at `cmp-media://thumb/<assetId>`, confined to `thumbs/` like assets are to `media/`.
+- **Playback advice.** Unplayable codecs and GIFs over 5 MB are stored as `transcode_reason`, and HEVC as `playback_warning`. Conversion creates a new "(MP4)" asset next to the original.
+- **Missing scan.** It runs at start-up and on demand ("Check files").
+- **Delete protection.** Deleting is refused with `CONFLICT { usedBy }` while the church logo, the logo screen or any presentation slide references the asset.
+- **Not yet implemented.** The optional 3 s hover strip is not generated: the library plays the file itself, muted, on hover.
 
 \* HEVC playback depends on OS hardware decode support, so the importer warns where it isn't available.
 
@@ -434,7 +480,9 @@ Nothing in the presentation path performs network I/O, and a CI check enforces i
 
 ### 9.6 Presentation versions
 
-Every save writes a `presentation_versions` snapshot (`snapshot_json` in `cmp.presentation/v1` format). The last 20 are kept per presentation, which gives restore-previous-version and is the same format used for `.cmppres` export.
+Every save writes a `presentation_versions` snapshot (`snapshot_json` in `cmp.presentation/v1` format). The last 20 are kept per presentation, which gives restore-previous-version and is the same format used for `.cmppres` import and export. Imported documents create a new presentation.
+Workspace media is referenced by asset ID. The destination workspace needs those same asset IDs to render
+referenced media.
 
 ---
 
@@ -501,6 +549,8 @@ All channels return the [§2.3 envelope](#23-response-envelope). Schemas live in
 | `songs:generateSlides` | `{ songId, arrangementId?, split: { mode, linesPerSlide?, maxChars? }, templateId? }` | `EngineSlide[]`                                            |
 | `songs:importFile`     | `{ path, format: 'txt'\|'openlyrics'\|'ccli' }`                                       | Song[]                                                     |
 
+As implemented (Phase 5), the channels are `songs:list` (search, collection and language filters), `get`, `create`, `update`, `delete`, `parseLyrics`, `preview` (generates slides for an unsaved draft), `import` (`{ paths? }`; without paths it opens a picker, and the format is detected from content), `collections`, `createCollection` and `templates`. Song files are parsed in the utility worker. OpenLyrics input with a DOCTYPE or ENTITY declaration is refused.
+
 ### Bible — `bible:*`
 
 | Channel                | Input                                               | Output                                              |
@@ -518,6 +568,8 @@ All channels return the [§2.3 envelope](#23-response-envelope). Schemas live in
 | `media:list`        | `{ folderId?, type?, tag?, query?, favourite?, cursor? }` | Paged assets                                                       |
 | `media:delete`      | `{ id }`                                                  | Error `CONFLICT` with `{ usedBy[] }` if the asset is referenced    |
 | `media:scanMissing` | —                                                         | `{ missing: assetId[] }`                                           |
+
+Also implemented: `media:get` (detail with licence and `usedBy`), `media:chooseAndImport`, `media:cancelJob`, `media:update`, `media:setTags`, `media:setLicence`, `media:transcode`, `media:folders` / `createFolder` / `renameFolder` / `deleteFolder`, `media:tags`. Push events: `jobs:progress` and `media:changed`. Dropped files reach main as paths through `window.cmp.files.pathFor(file)` (Electron `webUtils`); the renderer never reads them.
 
 ### Services & Live — `services:*`, `live:*`
 
@@ -740,7 +792,7 @@ Indexes: `slides(presentation_id, position)`, `service_items(service_id, positio
 | `config.json`                                           | Active workspace ID, window bounds, last display profile |
 | `workspaces/<churchId>/workspace.db` (+ `-wal`, `-shm`) | SQLite                                                   |
 | `workspaces/<churchId>/media/<aa>/<sha256>.<ext>`       | Content-addressed media                                  |
-| `workspaces/<churchId>/thumbs/<assetId>.webp`           | Thumbnails and posters                                   |
+| `workspaces/<churchId>/thumbs/<sha256>.webp`            | Thumbnails and posters (content-addressed, Phase 4)      |
 | `workspaces/<churchId>/fonts/`                          | Imported fonts (registered via `FontFace` at runtime)    |
 | `downloads/`                                            | Partial pack downloads                                   |
 | `backups/`                                              | Automatic and scheduled backups                          |
@@ -800,7 +852,7 @@ Channels are `alpha` (internal), `beta` (5–10 pilot churches) and `stable` (pu
 See [ARCHITECTURE.md §11](ARCHITECTURE.md#11-suggested-repository-layout) for the tree and the seven architectural rules. Package dependency direction:
 
 ```
-apps/desktop ──▶ presentation-engine ──▶ shared-types
+apps/desktop ──▶ presentation-engine ──▶ shared-validation (engine protocol), shared-types
       │      ──▶ database ──▶ shared-types
       │      ──▶ import-export ──▶ media-processing, database, shared-validation
       └────────▶ shared-validation ──▶ shared-types

@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@cmp/shared-types": "workspace:*"
+    "@cmp/shared-types": "workspace:*",
+    "@cmp/shared-validation": "workspace:*",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "~6.0.3"

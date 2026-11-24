@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { fail, ok } from "@cmp/shared-types";
-import { appInfoSchema, ipcChannels, ipcResultSchema } from "../index";
+import {
+  appInfoSchema,
+  IPC_CHANNEL_NAMES,
+  ipcChannels,
+  ipcResultSchema,
+  workspaceStateSchema,
+} from "../index";
 
 describe("ipcResultSchema", () => {
   const schema = ipcResultSchema(z.object({ id: z.string() }));
@@ -25,7 +31,19 @@ describe("ipcResultSchema", () => {
 });
 
 describe("ipcChannels", () => {
-  it("app:info takes no input", () => {
+  it("lists exactly the channels the preload exposes", () => {
+    expect(Object.keys(ipcChannels).sort()).toEqual(
+      [...IPC_CHANNEL_NAMES].sort(),
+    );
+  });
+
+  it("names every channel <namespace>:<method>", () => {
+    for (const channel of IPC_CHANNEL_NAMES) {
+      expect(channel).toMatch(/^[a-z]+:[a-zA-Z]+$/);
+    }
+  });
+
+  it("no-input channels reject a payload", () => {
     expect(ipcChannels["app:info"].input.safeParse(undefined).success).toBe(
       true,
     );
@@ -43,5 +61,25 @@ describe("ipcChannels", () => {
       chrome: "140.0.0",
     };
     expect(appInfoSchema.parse(info)).toEqual(info);
+  });
+
+  it("workspace:create trims and requires a church name", () => {
+    const input = ipcChannels["workspace:create"].input;
+    expect(input.parse({ churchName: "  Grace Chapel " })).toEqual({
+      churchName: "Grace Chapel",
+    });
+    expect(input.safeParse({ churchName: "   " }).success).toBe(false);
+    expect(input.safeParse({ churchName: "x".repeat(121) }).success).toBe(
+      false,
+    );
+  });
+
+  it("workspace state is a discriminated union", () => {
+    expect(workspaceStateSchema.parse({ status: "none" })).toEqual({
+      status: "none",
+    });
+    expect(workspaceStateSchema.safeParse({ status: "ready" }).success).toBe(
+      false,
+    );
   });
 });

@@ -42,7 +42,10 @@ export class MigrationError extends Error {
     readonly version: string,
     options: { cause: unknown },
   ) {
-    super(`Migration ${version} failed; the workspace was rolled back`, options);
+    super(
+      `Migration ${version} failed; the workspace was rolled back`,
+      options,
+    );
     this.name = "MigrationError";
   }
 }

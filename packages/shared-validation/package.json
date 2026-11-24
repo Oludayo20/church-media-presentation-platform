@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./channel-names": "./src/ipc/channel-names.ts",
+    "./engine-protocol": "./src/engine-protocol.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p ."

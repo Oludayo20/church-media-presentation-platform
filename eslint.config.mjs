@@ -37,7 +37,7 @@ export default tseslint.config(
     files: [
       "apps/desktop/electron/**/*.ts",
       "apps/desktop/tests/**/*.ts",
-      "packages/database/**/*.ts",
+      "packages/database/**/*.{ts,mjs}",
       "packages/media-processing/**/*.ts",
       "packages/import-export/**/*.ts",
       "**/*.config.{ts,mjs,cjs}",

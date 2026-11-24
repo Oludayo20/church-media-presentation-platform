@@ -50,7 +50,7 @@ Every architectural decision serves one constraint: **a live service must never 
 | Styling                   | Tailwind CSS v4 + shadcn/ui                                                                   | Consistent, accessible, dark-first design system                                               |
 | Client state              | Zustand                                                                                       | Lightweight stores for editor and live UI state                                                |
 | Forms/validation          | React Hook Form + Zod                                                                         | Zod schemas are shared with the IPC layer                                                      |
-| Local database            | SQLite (better-sqlite3)                                                                       | Synchronous, fast, single-file, offline                                                        |
+| Local database            | SQLite (Node's built-in `node:sqlite`)                                                        | Synchronous, fast, single-file, offline, no native module                                      |
 | ORM                       | Drizzle ORM + drizzle-kit migrations                                                          | Type-safe queries, plain SQL migrations                                                        |
 | Search                    | SQLite FTS5                                                                                   | Lyrics and scripture full-text search with no extra service                                    |
 | Rendering                 | DOM/CSS compositing + Canvas/WebGL for effects                                                | Crisp text, GPU-accelerated transforms and video                                               |
@@ -78,9 +78,11 @@ If the audience output were "a React page that shows slides", any re-render, sta
 
 Absolute file paths break when a church copies its workspace to a new laptop. Imported media is copied into `<workspace>/media/<sha256-prefix>/<sha256>.<ext>`, and every slide references a stable `asset_id`. Duplicate imports are detected for free, and backups are portable.
 
-### 2.5 Why better-sqlite3 in the main process only
+### 2.5 Why `node:sqlite` in the main process only
 
-The renderer is sandboxed and has no Node access. All database access goes through repositories in the main process, exposed over validated IPC. Synchronous better-sqlite3 calls are fast enough for this data size and avoid callback interleaving bugs. Long jobs (PPTX import, thumbnailing, backup) run in a `utilityProcess` worker so the main process stays responsive.
+The renderer is sandboxed and has no Node access. All database access goes through repositories in the main process, exposed over validated IPC. Synchronous SQLite calls are fast enough for this data size and avoid callback interleaving bugs.
+
+The driver is Node's built-in `node:sqlite` (SQLite 3.5x with FTS5 and the online backup API) rather than better-sqlite3, which was the original plan. The built-in is present in both Electron's Node and the Node that runs Vitest. As a result there is no native module to rebuild per Electron ABI, no prebuilt binary to download, no install script to allow, and no per-architecture `.node` file to sign. Drizzle has no stable `node:sqlite` driver yet, so `packages/database` drives it through `drizzle-orm/sqlite-proxy`. Drizzle builds the SQL and a synchronous callback executes it. Transactions are serialised on the single connection and must not await real I/O. Long jobs (PPTX import, thumbnailing, backup) run in a `utilityProcess` worker so the main process stays responsive.
 
 ---
 

@@ -16,7 +16,7 @@ function contentSecurityPolicy(): Plugin {
     "style-src 'self'",
     "img-src 'self' data: cmp-media:",
     "media-src 'self' cmp-media:",
-    "font-src 'self'",
+    "font-src 'self' cmp-media:",
     "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'none'",
@@ -28,6 +28,7 @@ function contentSecurityPolicy(): Plugin {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: cmp-media:",
     "media-src 'self' cmp-media:",
+    "font-src 'self' cmp-media:",
     "connect-src 'self' ws://localhost:*",
     "object-src 'none'",
   ].join("; ");
@@ -45,7 +46,11 @@ export default defineConfig({
   main: {
     build: {
       rolldownOptions: {
-        input: { index: resolve(__dirname, "electron/main/index.ts") },
+        input: {
+          index: resolve(__dirname, "electron/main/index.ts"),
+          // The utilityProcess worker (imports, ffmpeg) — see electron/worker.
+          worker: resolve(__dirname, "electron/worker/index.ts"),
+        },
       },
     },
   },
@@ -64,6 +69,8 @@ export default defineConfig({
         input: {
           index: resolve(__dirname, "src/index.html"),
           audience: resolve(__dirname, "src/audience.html"),
+          // Hidden window: PDF rasterising and slide export (never shown).
+          render: resolve(__dirname, "src/render.html"),
         },
       },
     },

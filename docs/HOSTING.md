@@ -23,7 +23,7 @@ This product is primarily a **desktop application**. "Production deployment" mos
 - Git
 - Graphviz (`brew install graphviz`) for rendering docs diagrams
 - **macOS builds:** Xcode Command Line Tools. Apple Developer account for signing (see [EXTERNAL_INTEGRATIONS.md §1](EXTERNAL_INTEGRATIONS.md#1-apple-developer-id-signing--notarisation)).
-- **Windows builds:** Windows 10/11 with Visual Studio Build Tools (C++ workload) for `better-sqlite3` native rebuilds.
+- **Windows builds:** Windows 10/11. No C++ toolchain is needed: the app has no native Node modules (SQLite is the built-in `node:sqlite`).
 - A **second display** (a projector, TV or spare monitor) for real live-mode testing. Without one, the app runs in single-display preview mode.
 - Docker Desktop, only if you work on the optional cloud API.
 
@@ -90,7 +90,7 @@ pnpm --filter @cmp/database db:generate          # Phase 1: drizzle-kit migratio
 pnpm --filter @cmp/database db:studio            # Phase 1: inspect workspace.db
 ```
 
-**Install scripts are deny-by-default.** pnpm only runs a dependency's install script if `pnpm-workspace.yaml` → `allowBuilds` lists it as `true`. When Phase 1 adds `better-sqlite3`, add it there; otherwise its native build silently won't run.
+**Install scripts are deny-by-default.** pnpm only runs a dependency's install script if `pnpm-workspace.yaml` → `allowBuilds` lists it as `true`. Phase 1 chose the built-in `node:sqlite` precisely so that no native build is needed. If a native module is ever added, list it there, or its build silently won't run.
 
 **Workspace packages ship TypeScript source.** Each `packages/*` exports `./src/index.ts` directly, with no build step. electron-vite bundles them into the app. That is why everything in `apps/desktop` is a devDependency: nothing is loaded from `node_modules` at runtime, so the packaged asar contains only `out/` and `package.json`.
 
@@ -137,7 +137,7 @@ git push --follow-tags                 # tag vX.Y.Z triggers .github/workflows/r
 - **Never update during a service.** `autoInstallOnAppQuit: true`, `autoDownload: true`, and the "Restart to update" prompt is suppressed while `live_sessions` has an open session.
 - **Channels:** `updates.channel` setting maps to `alpha` / `beta` / `latest` feeds. Pilot churches use `beta`.
 - **Staged rollout:** set `stagingPercentage: 10` in `latest.yml` and raise it to 50 and then 100 over a week if crash reports stay flat.
-- **Native modules:** `better-sqlite3` is rebuilt per platform/arch by electron-builder (`npmRebuild: true`). Universal macOS builds merge both arches with `@electron/universal`.
+- **Native modules:** none. SQLite comes from Electron's built-in `node:sqlite`. Universal macOS builds merge both arches with `@electron/universal`.
 - **ffmpeg:** ship platform-specific LGPL static builds in `extraResources`. Exclude the other platforms' binaries with `files` filters.
 - **Bundled content:** public-domain Bibles, built-in templates and the sample pack go in `extraResources/content/` and are copied into the workspace on first run.
 - **Install size budget:** < 250 MB installed (Electron ~180 MB + ffmpeg + content).
@@ -183,14 +183,13 @@ The product is free, so costs stay deliberately flat. R2's zero egress fees are 
 
 ## Troubleshooting
 
-| Symptom                                                                               | Cause / fix                                                                                                                                                  |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Error: The module was compiled against a different Node.js version` (better-sqlite3) | Check `better-sqlite3` is `true` under `allowBuilds` in `pnpm-workspace.yaml`, then run `pnpm --filter @cmp/desktop exec electron-builder install-app-deps`. |
-| Audience window opens on the laptop screen                                            | The display is mirrored. Switch the OS to **extended** mode, then reassign in Settings → Displays.                                                           |
-| Black bars or cropped text on the projector                                           | The projector applies overscan. Turn on "Just scan/1:1" on the projector or raise `display.safeAreaPct`.                                                     |
-| Video plays with no picture (audio only)                                              | Unsupported codec (for example HEVC without hardware decode, or ProRes). Use Media → Transcode to H.264.                                                     |
-| macOS: "App is damaged and can't be opened"                                           | Not notarised/stapled. Check the notarytool log in the release job.                                                                                          |
-| Windows SmartScreen warning                                                           | A new certificate has no reputation yet. It clears with downloads, or use an EV cert.                                                                        |
-| macOS: app cannot see a second display in fullscreen                                  | System Settings → Desktop & Dock → disable "Displays have separate Spaces" (or rely on `simpleFullscreen`).                                                  |
-| Workspace upgrade failed on launch                                                    | A pre-migration backup is in `<userData>/backups/`. See [RUNBOOK.md](RUNBOOK.md#sqlite-migrations-in-production).                                            |
-| Diagrams missing PNGs                                                                 | `brew install graphviz && ./docs/diagrams/render.sh`                                                                                                         |
+| Symptom                                              | Cause / fix                                                                                                       |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Audience window opens on the laptop screen           | The display is mirrored. Switch the OS to **extended** mode, then reassign in Settings → Displays.                |
+| Black bars or cropped text on the projector          | The projector applies overscan. Turn on "Just scan/1:1" on the projector or raise `display.safeAreaPct`.          |
+| Video plays with no picture (audio only)             | Unsupported codec (for example HEVC without hardware decode, or ProRes). Use Media → Transcode to H.264.          |
+| macOS: "App is damaged and can't be opened"          | Not notarised/stapled. Check the notarytool log in the release job.                                               |
+| Windows SmartScreen warning                          | A new certificate has no reputation yet. It clears with downloads, or use an EV cert.                             |
+| macOS: app cannot see a second display in fullscreen | System Settings → Desktop & Dock → disable "Displays have separate Spaces" (or rely on `simpleFullscreen`).       |
+| Workspace upgrade failed on launch                   | A pre-migration backup is in `<userData>/backups/`. See [RUNBOOK.md](RUNBOOK.md#sqlite-migrations-in-production). |
+| Diagrams missing PNGs                                | `brew install graphviz && ./docs/diagrams/render.sh`                                                              |

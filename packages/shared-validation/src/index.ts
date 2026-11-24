@@ -1,2 +1,15 @@
-export * from "./ipc";
-export * from "./channels";
+export * from "./ipc/envelope";
+export * from "./ipc/app";
+export * from "./ipc/workspace";
+export * from "./ipc/channels";
+export { IPC_CHANNEL_NAMES, IPC_EVENT_NAMES } from "./ipc/channel-names";
+export * from "./ipc/live";
+export * from "./ipc/media";
+export * from "./ipc/songs";
+export * from "./ipc/services";
+export * from "./shortcuts";
+export * from "./engine-protocol";
+export type { RenderRequest, RenderResponse } from "./render-protocol";
+export * from "./settings-catalog";
+export type { CmpApi } from "./api";
+export { bibleTranslationSchema, bibleImportVerseSchema } from "./ipc/bible";

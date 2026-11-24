@@ -12,3 +12,6 @@ playwright-report/
 .env.*
 !.env.example
 .dev-workspace/
+
+# Platform ffmpeg/ffprobe binaries (fetched for packaging, never committed)
+apps/desktop/resources/ffmpeg/*/

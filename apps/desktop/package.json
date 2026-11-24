@@ -16,6 +16,8 @@
   "devDependencies": {
     "@cmp/database": "workspace:*",
     "@cmp/design-system": "workspace:*",
+    "@cmp/import-export": "workspace:*",
+    "@cmp/media-processing": "workspace:*",
     "@cmp/presentation-engine": "workspace:*",
     "@cmp/shared-types": "workspace:*",
     "@cmp/shared-validation": "workspace:*",
@@ -30,6 +32,7 @@
     "electron-log": "^5.4.4",
     "electron-vite": "^6.0.0",
     "lucide-react": "^1.77.0",
+    "pdfjs-dist": "^6.5.438",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.5",

@@ -12,5 +12,10 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "typescript": "~6.0.3"
+  },
+  "dependencies": {
+    "@cmp/shared-validation": "workspace:*",
+    "fast-xml-parser": "^5.12.1",
+    "unzipper": "0.12.5"
   }
 }

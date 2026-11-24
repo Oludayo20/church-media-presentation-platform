@@ -229,7 +229,11 @@ describe("settings repository", () => {
   };
 
   it("returns defaults when nothing is stored", async () => {
-    const repo = createSettingsRepository(database, await seedChurch(), catalog);
+    const repo = createSettingsRepository(
+      database,
+      await seedChurch(),
+      catalog,
+    );
     expect(await repo.getAll()).toEqual({
       "ui.theme": "dark",
       "display.safeAreaPct": 5,
@@ -237,7 +241,11 @@ describe("settings repository", () => {
   });
 
   it("round-trips typed values and upserts", async () => {
-    const repo = createSettingsRepository(database, await seedChurch(), catalog);
+    const repo = createSettingsRepository(
+      database,
+      await seedChurch(),
+      catalog,
+    );
     await repo.set("ui.theme", "light");
     await repo.set("ui.theme", "system");
     expect(await repo.get("ui.theme")).toBe("system");
@@ -249,10 +257,14 @@ describe("settings repository", () => {
   });
 
   it("rejects invalid values on write", async () => {
-    const repo = createSettingsRepository(database, await seedChurch(), catalog);
-    await expect(
-      repo.set("ui.theme", "purple" as "dark"),
-    ).rejects.toThrow("invalid theme");
+    const repo = createSettingsRepository(
+      database,
+      await seedChurch(),
+      catalog,
+    );
+    await expect(repo.set("ui.theme", "purple" as "dark")).rejects.toThrow(
+      "invalid theme",
+    );
   });
 
   it("falls back to the default when a stored value is corrupt", async () => {

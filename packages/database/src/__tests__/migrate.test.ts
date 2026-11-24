@@ -65,9 +65,9 @@ describe("migrate", () => {
     const database = memory();
     await migrate(database.sqlite, [v1]);
     const beforeMigrate = vi.fn();
-    expect(
-      await migrate(database.sqlite, [v1], { beforeMigrate }),
-    ).toEqual({ applied: [] });
+    expect(await migrate(database.sqlite, [v1], { beforeMigrate })).toEqual({
+      applied: [],
+    });
     expect(beforeMigrate).not.toHaveBeenCalled();
   });
 
@@ -127,16 +127,45 @@ describe("real schema migrations", () => {
   it("apply cleanly to an in-memory database", async () => {
     const database = memory();
     await migrate(database.sqlite, migrations);
-    expect(tables(database)).toEqual([
+    // FTS5 shadow tables (songs_fts_data, …) are an implementation detail.
+    expect(
+      tables(database).filter(
+        (name) => !/^(?:songs|bible_verses)_fts_/u.test(String(name)),
+      ),
+    ).toEqual([
       "app_migrations",
+      "bible_book_aliases",
+      "bible_books",
+      "bible_translations",
+      "bible_verses",
+      "bible_verses_fts",
       "church_members",
       "churches",
+      "display_profiles",
+      "live_sessions",
+      "media_asset_tags",
       "media_assets",
       "media_folders",
+      "media_licences",
+      "media_tags",
+      "presentation_versions",
       "presentations",
+      "scripture_collections",
+      "scripture_passages",
+      "service_item_groups",
+      "service_items",
+      "service_templates",
+      "services",
       "settings",
       "slide_objects",
       "slides",
+      "song_arrangements",
+      "song_collection_items",
+      "song_collections",
+      "song_sections",
+      "songs",
+      "songs_fts",
+      "templates",
       "users",
     ]);
   });
